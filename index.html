@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學術文獻管理系統</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>學術文獻管理系統</h1>
+      <div class="stats" id="stats">
+        <div class="stat-item">
+          <div class="stat-num" id="total-count">0</div>
+          <div class="stat-label">篇文獻</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="quant-count">0</div>
+          <div class="stat-label">量化研究</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="qual-count">0</div>
+          <div class="stat-label">質性研究</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" id="mixed-count">0</div>
+          <div class="stat-label">混合研究</div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="main-nav">
+      <button class="nav-btn active" data-page="all">所有文獻</button>
+      <button class="nav-btn" data-page="method">研究方法統整</button>
+      <button class="nav-btn" data-page="keywords">關鍵字統整</button>
+      <button class="nav-btn" data-page="apa">APA 引用</button>
+      <button class="nav-btn" data-page="notes">可用段落</button>
+      <button class="nav-btn" data-page="add">新增文獻 +</button>
+      <button class="nav-btn settings-btn" data-page="settings">⚙️ 設定</button>
+    </nav>
+
+    <div id="page-all" class="page active">
+      <input type="text" class="search-box" id="search-all" placeholder="搜尋標題、作者、關鍵字、研究工具...">
+      <div id="literature-list"></div>
+    </div>
+
+    <div id="page-method" class="page">
+      <div class="sub-nav">
+        <button class="sub-btn active" data-sub="overview">一覽表</button>
+        <button class="sub-btn" data-sub="tools">研究工具統整</button>
+      </div>
+      <div id="sub-overview" class="sub-page active">
+        <div class="filter-row">
+          <button class="filter-btn active" data-filter="all">全部</button>
+          <button class="filter-btn" data-filter="量化研究">量化</button>
+          <button class="filter-btn" data-filter="質性研究">質性</button>
+          <button class="filter-btn" data-filter="混合研究">混合</button>
+        </div>
+        <div id="method-list"></div>
+      </div>
+      <div id="sub-tools" class="sub-page">
+        <div class="section-title">統計與分析工具（點擊篩選）</div>
+        <div id="tools-cloud"></div>
+        <div class="section-title">量化方法分布</div>
+        <div id="quant-tools-chart"></div>
+        <div class="section-title">質性方法分布</div>
+        <div id="qual-tools-chart"></div>
+        <div id="tool-filter-results" class="filter-results" style="display:none">
+          <div class="filter-header">
+            <span>使用「<span id="selected-tool"></span>」的文獻</span>
+            <button class="clear-filter-btn" onclick="clearToolFilter()">清除篩選</button>
+          </div>
+          <div id="tool-results-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="page-keywords" class="page">
+      <div id="keywords-cloud"></div>
+      <div id="keyword-filter-results" class="filter-results" style="display:none">
+        <div class="filter-header">
+          <span>關鍵字「<span id="selected-keyword"></span>」的文獻（<span id="kw-count"></span> 篇）</span>
+          <button class="clear-filter-btn" onclick="clearKeywordFilter()">清除篩選</button>
+        </div>
+        <div id="keyword-results-list"></div>
+      </div>
+    </div>
+
+    <div id="page-apa" class="page">
+      <div class="page-header">
+        <p>依第一作者姓氏筆畫排序 · APA 第 7 版</p>
+        <button class="copy-btn" onclick="copyAllAPA()">複製全部</button>
+      </div>
+      <div id="apa-list"></div>
+    </div>
+
+    <div id="page-notes" class="page">
+      <input type="text" class="search-box" id="search-notes" placeholder="搜尋段落內容...">
+      <div id="notes-list"></div>
+    </div>
+
+    <div id="page-add" class="page">
+      <div class="info-box">上傳 PDF 後，AI 會自動分析全文並填入所有欄位</div>
+      
+      <div class="upload-section">
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">⬆</div>
+          <div class="upload-text">拖曳 PDF 至此或點擊上傳</div>
+          <div class="upload-hint">AI 自動萃取所有欄位</div>
+          <input type="file" id="pdf-input" accept=".pdf" style="display:none">
+        </div>
+        <div id="upload-status" class="upload-status" style="display:none"></div>
+      </div>
+
+      <form id="add-form" class="add-form">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>文獻標題</label>
+            <input type="text" name="title" required>
+          </div>
+          <div class="form-group">
+            <label>出版年份</label>
+            <input type="number" name="year" min="1900" max="2100">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>作者（多位作者請用頓號分隔）</label>
+          <input type="text" name="authors" placeholder="如：陳志明、林美華">
+        </div>
+
+        <div class="form-group">
+          <label>期刊名稱</label>
+          <input type="text" name="journal">
+        </div>
+
+        <div class="form-group">
+          <label>APA 引用格式（第 7 版）</label>
+          <input type="text" name="apa_citation" placeholder="AI 自動依最新規範生成...">
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>研究取向</label>
+            <select name="research_type">
+              <option value="">選擇...</option>
+              <option value="量化研究">量化研究</option>
+              <option value="質性研究">質性研究</option>
+              <option value="混合研究">混合研究</option>
+              <option value="文獻回顧">文獻回顧</option>
+              <option value="個案研究">個案研究</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>研究對象</label>
+            <input type="text" name="research_subjects" placeholder="如：北部三所大學學生 423 名">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>資料蒐集方法</label>
+            <input type="text" name="data_collection" placeholder="如：問卷調查、深度訪談">
+          </div>
+          <div class="form-group">
+            <label>統計 / 分析工具</label>
+            <input type="text" name="analysis_tools" placeholder="如：結構方程模型、主題分析">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>研究方法描述（完整）</label>
+          <textarea name="research_method" rows="3" placeholder="完整研究方法說明..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>研究關鍵字（以逗號分隔）</label>
+          <input type="text" name="keywords" placeholder="如：學習動機, 自我效能, 線上學習">
+        </div>
+
+        <div class="form-group">
+          <label>研究結果摘要</label>
+          <textarea name="results_summary" rows="4"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>可運用段落（每段用「---」分隔）</label>
+          <textarea name="usable_quotes" rows="5" placeholder="貼上可引用的重要段落，段落間用 --- 分隔"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">儲存文獻</button>
+          <button type="reset" class="btn-secondary">清除</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="page-settings" class="page">
+      <div class="settings-section">
+        <h2>API 設定</h2>
+        <div class="info-box">
+          請輸入你的 API Keys。這些資訊只會儲存在你的瀏覽器中，不會上傳到任何伺服器。
+        </div>
+        
+        <div class="form-group">
+          <label>Anthropic API Key（AI 萃取功能）</label>
+          <input type="password" id="anthropic-key" placeholder="sk-ant-...">
+          <small>取得位置：console.anthropic.com → API Keys</small>
+        </div>
+
+        <div class="form-group">
+          <label>Supabase URL</label>
+          <input type="text" id="supabase-url" placeholder="https://xxx.supabase.co">
+          <small>取得位置：Supabase 專案 → Settings → API</small>
+        </div>
+
+        <div class="form-group">
+          <label>Supabase Anon Key</label>
+          <input type="password" id="supabase-key" placeholder="eyJ...">
+          <small>取得位置：Supabase 專案 → Settings → API → anon public</small>
+        </div>
+
+        <button onclick="saveSettings()" class="btn-primary">儲存設定</button>
+        
+        <div id="settings-status" style="margin-top:12px;display:none"></div>
+      </div>
+
+      <div class="settings-section">
+        <h2>資料管理</h2>
+        <button onclick="exportData()" class="btn-secondary">匯出所有資料（JSON）</button>
+        <button onclick="importData()" class="btn-secondary">匯入資料</button>
+        <input type="file" id="import-input" accept=".json" style="display:none">
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
